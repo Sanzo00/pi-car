@@ -21,8 +21,8 @@ class Move:
     for i in self.IN:
       GPIO.setup(i, GPIO.OUT)
 
-    # self.pwm_left = GPIO.PWM(self.ENA, 80)
-    # self.pwm_right = GPIO.PWM(self.ENB, 80)
+    self.pwm_left = GPIO.PWM(self.ENA, 80)
+    self.pwm_right = GPIO.PWM(self.ENB, 80)
     # self.pwm_left.start(40)
     # self.pwm_right.start(40)
     # print("init is done!")

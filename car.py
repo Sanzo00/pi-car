@@ -25,7 +25,7 @@ def get_time():
   return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 async def connect_and_move():
-  # url = "ws://localhost:9527" // your server address, which run server.py
+  url = "ws://localhost:9527" // your server address, which run server.py
   async with websockets.connect(url) as websocket:
     # connect to server
     msg = {"device": "car", "type": "connect"}
