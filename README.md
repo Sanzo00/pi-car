@@ -23,6 +23,8 @@
 
 > 效果展示
 
+![](https://img.sanzo.top/img/pi/remote-control-car.png)
+
 ![](https://img.sanzo.top/img/pi/remote-control-car.gif)
 
 
