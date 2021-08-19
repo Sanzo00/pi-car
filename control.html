@@ -1,0 +1,125 @@
+<html>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+<style type="text/css">
+  #car {
+    position: fixed;
+    width: 300px;
+    bottom: 20px;
+    margin: 20px auto;
+    left: 0;
+    right: 0;
+  }
+
+  button.top {
+    display: block;
+    height: 50px;
+    width: 90px;
+    margin: 10px auto;
+  }
+
+  button.left {
+    height: 50px;
+    width: 90px;
+    margin-right: 10px;
+  }
+
+  button.right {
+    height: 50px;
+    width: 90px;
+  }
+
+  button.bottom {
+    display: block;
+    height: 50px;
+    width: 90px;
+    margin: 10px auto;
+  }
+
+  button.stop {
+    height: 50px;
+    width: 90px;
+    margin-right: 10px;
+  }
+</style>
+
+<head>
+    <title>Control</title>
+</head>
+
+<body>
+<p id="message"></p>
+<div id="car">
+  <button class="top" onclick="send('forward')">Forward</button>
+  <button class="left" onclick="send('left')">Left</button>
+  <button class="stop" onclick="send('stop')">Stop</button>
+  <button class="right" onclick="send('right')">Right</button>
+  <button class="bottom" onclick="send('back')">Back</button>
+</div>
+</body>
+
+<script>
+  document.getElementById('message').textContent = '正在连接服务器...';
+  var isConnect;
+  var host = "ws://localhost:9527/"; // your server address, which run server.py
+  var ws = new WebSocket(host);
+
+  ws.onopen = function () {
+    var data = new Object();
+    data.device = 'control';
+    data.type = 'connect';
+    ws.send(JSON.stringify(data));
+    if (ws.readyState == 1) {
+      document.getElementById('message').textContent = '服务器连接成功!';
+    }
+    console.log("onopen: " + JSON.stringify(data));
+  };
+
+  ws.onmessage = function (evt) {
+    var jsonData = JSON.parse(evt.data);
+    console.log("onmessage: " + evt.data);
+    if (jsonData.state == 0) {
+      isConnect = 0
+      document.getElementById('message').textContent = '小车未连接!';
+    } else {
+      isConnect = 1;
+      document.getElementById('message').textContent = '小车已连接...';
+    }
+  };
+
+  ws.onclose = function () {
+    isConnect = 0;
+    document.getElementById('message').textContent = '服务器连接断开...';
+  }
+
+  function send(msg) {
+    if (!isConnect) {
+      document.getElementById('message').textContent = '小车未连接!';
+      return false;
+    }
+
+    var data = new Object();
+    data.device = 'control';
+    data.type = 'move'
+    switch (msg) {
+      case 'forward':
+      case 'left':
+      case 'stop':
+      case 'right':
+      case 'back':
+        data.action = msg;
+        break;
+      default:
+        document.getElementById('message').textContent = '错误的动作!';
+        return false;
+    }
+
+    try {
+      console.log("onsend: " + JSON.stringify(data));
+      ws.send(JSON.stringify(data));
+    } catch (ex) {
+
+    }
+  }
+</script>
+</html>
