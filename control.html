@@ -2,60 +2,66 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
 <style type="text/css">
-  #car {
-    position: fixed;
-    width: 300px;
-    bottom: 20px;
-    margin: 20px auto;
-    left: 0;
-    right: 0;
-  }
-
-  button.top {
-    display: block;
-    height: 50px;
-    width: 90px;
-    margin: 10px auto;
-  }
-
-  button.left {
-    height: 50px;
-    width: 90px;
-    margin-right: 10px;
-  }
-
-  button.right {
+  button {
     height: 50px;
     width: 90px;
   }
 
-  button.bottom {
-    display: block;
-    height: 50px;
-    width: 90px;
-    margin: 10px auto;
-  }
-
-  button.stop {
-    height: 50px;
-    width: 90px;
-    margin-right: 10px;
+  input {
+    text-align:center;
   }
 </style>
 
 <head>
-    <title>Control</title>
+    <title>Controller</title>
 </head>
 
 <body>
-<p id="message"></p>
-<div id="car">
-  <button class="top" onclick="send('forward')">Forward</button>
-  <button class="left" onclick="send('left')">Left</button>
-  <button class="stop" onclick="send('stop')">Stop</button>
-  <button class="right" onclick="send('right')">Right</button>
-  <button class="bottom" onclick="send('back')">Back</button>
-</div>
+<p id="message" align="center"></p>
+
+<table border="0px" align="center">
+  <tr>
+    <td>speed:</td>
+    <td id="speed" width="100px" style="text-align: center;">slow</td>
+  </tr>
+  <tr>
+    <td>distance:</td>
+    <td id="distance" width="100px" style="text-align: center;">0 cm</td>
+  </tr>
+  <!-- <tr>
+    <td>mode:</td>
+    <td width="100px" style="text-align: center;">remote control</td>
+  </tr> -->
+</table>
+
+</br>
+
+<table border="0px" align="center">
+  <!-- <th>
+    <td style="text-align:center;">Controller</td>
+  </th> -->
+  <tr>
+    <td><button class="left45" onclick="send('left45')">left45</button></td>
+    <td><button class="forward" onclick="send('forward')">forward</button></td>
+    <td><button class="right45" onclick="send('right45')">right45</button></td>
+  </tr>
+  <tr>
+    <td><button class="left" onclick="send('left')">left</button></td>
+    <td><button class="stop" onclick="send('stop')">stop</button></td>
+    <td><button class="right" onclick="send('right')">right</button></td>
+  </tr>
+  <tr>
+    <td><button class="slow" onclick="send('slow')">-</button></td>
+    <td><button class="back" onclick="send('back')">back</button></td>
+    <td><button class="fast" onclick="send('fast')">+</button></td>
+  </tr>
+  <tr>
+    <td><button class="distance" onclick="send('distance')">distance</button></td>
+    <td></td>
+    <td><button class="auto" onclick="send('auto')">auto</button></td>
+  </tr>
+</table>
+
 </body>
 
 <script>
@@ -63,6 +69,8 @@
   var isConnect;
   var host = "ws://localhost:9527/"; // your server address, which run server.py
   var ws = new WebSocket(host);
+  var speed = 0;
+  var speed_kv = {0: 'slow', 1: 'medium', 2: 'fast'} 
 
   ws.onopen = function () {
     var data = new Object();
@@ -78,19 +86,33 @@
   ws.onmessage = function (evt) {
     var jsonData = JSON.parse(evt.data);
     console.log("onmessage: " + evt.data);
-    if (jsonData.state == 0) {
-      isConnect = 0
-      document.getElementById('message').textContent = '小车未连接!';
-    } else {
-      isConnect = 1;
-      document.getElementById('message').textContent = '小车已连接...';
+    if (jsonData.type == "connect") {
+      if (jsonData.state == 0) {
+        isConnect = 0
+        document.getElementById('message').textContent = '小车未连接!';
+      } else {
+        isConnect = 1;
+        document.getElementById('message').textContent = '小车已连接...';
+      }
+    } else if(jsonData.type == "config") {
+      if (jsonData.data == null) {
+        document.getElementById('distance').textContent = '0 cm';
+      } else {
+        document.getElementById('distance').textContent = jsonData.data;
+      }
     }
+    
   };
 
   ws.onclose = function () {
     isConnect = 0;
     document.getElementById('message').textContent = '服务器连接断开...';
   }
+
+  /*
+      type: move, action: {forward, back, left, left45, right, right45, stop}
+      type: config, action: {slow, fast, distance, auto}
+  */
 
   function send(msg) {
     if (!isConnect) {
@@ -100,25 +122,55 @@
 
     var data = new Object();
     data.device = 'control';
-    data.type = 'move'
     switch (msg) {
       case 'forward':
-      case 'left':
-      case 'stop':
-      case 'right':
       case 'back':
+      case 'left':
+      case 'left45':
+      case 'right':
+      case 'right45':
+      case 'stop':
+        data.type = 'move';
         data.action = msg;
         break;
+
+      case 'slow':
+        if (speed == 0) {
+          return false;
+        }
+        speed -= 1;
+        data.type = 'config';
+        data.action = speed_kv[speed];
+        document.getElementById('speed').textContent = data.action;
+        break;
+        
+      case 'fast':
+        if (speed == 2) {
+          return false;
+        }     
+        speed += 1;
+        data.type = 'config';
+        data.action = speed_kv[speed];
+        document.getElementById('speed').textContent = data.action;
+        break;
+      
+      case 'distance':
+      case 'auto':
+        data.type = 'config';
+        data.action = msg;
+        break;
+
       default:
         document.getElementById('message').textContent = '错误的动作!';
         return false;
+        break;
     }
 
     try {
       console.log("onsend: " + JSON.stringify(data));
       ws.send(JSON.stringify(data));
     } catch (ex) {
-
+      console.log("ws.send() is susk!")
     }
   }
 </script>

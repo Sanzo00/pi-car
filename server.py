@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Time:   2021/8/19 18:40
+Time:   2021/8/21 14:20
 Author: Sanzo
 Github: github.com/Sanzo00
 Email:  arrangeman@163.com
@@ -34,7 +34,7 @@ async def watchDog(websocket, path):
     elif data["device"] == "car":
       await car_event(websocket, data)
     elif data["device"] == "control":
-      users.add(websocket)
+      # users.add(websocket)
       # print("users size: {0}".format(len(users))) # bug!!!
       await control_event(websocket, data)
 
@@ -43,18 +43,34 @@ async def car_event(websocket, data):
   # print("id(car): ", id(car))
   if data["type"] == "connect":
     car = websocket
+  elif data["type"] == "config" and users is not None: # send distance to contorl
+    for user in users:
+      try:
+        await user.send(json.dumps(data))
+      except websockets.exceptions.ConnectionClosedError:
+        pass
+    users.clear()
 
 async def control_event(websocket, data):
+  global car
   msg = {"device": "server"}
   if data["type"] == "connect":
+    msg["type"] = "connect"
     msg["state"] = 0 if car is None else 1
     await websocket.send(json.dumps(msg))
     print(get_time(), "server send to control: {0}".format(msg))
 
-  elif data["type"] == "move" and car is not None:
+  # foward back stop left left45 right right45
+  # slow fast distance auto
+  elif (data["type"] == "move" or data["type"] == "config") and car is not None:
+    if data["action"] == "distance":
+      users.add(websocket)
     msg["action"] = data["action"]
-    await car.send(json.dumps(msg))
-    print(get_time(), "server send to car: {0}".format(msg))
+    try:
+      await car.send(json.dumps(msg))
+      print(get_time(), "server send to car: {0}".format(msg))
+    except websockets.exceptions.ConnectionClosedError:
+      car = None
 
 start_server = websockets.serve(watchDog, "0.0.0.0", 9527)
 asyncio.get_event_loop().run_until_complete(start_server)
