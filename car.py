@@ -16,6 +16,7 @@ import asyncio
 import logging
 import os
 import websockets
+from threading import Thread
 
 ENA = 20
 ENB = 21
@@ -26,6 +27,7 @@ TRIG = 15
 move = Move(ENA, ENB, IN)
 distance = Distance(TRIG, ECHO)
 auto = Auto(move, distance)
+cur_thread = None
 
 def get_time():
   return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -36,9 +38,11 @@ async def connect_and_move():
     # connect to server
     msg = {"device": "car", "type": "connect"}
     await websocket.send(json.dumps(msg))
-
+    
     # receive msg from server
     while True:
+      global cur_thread
+      global off
       msg = await websocket.recv()
       msg = json.loads(msg)
       print("{0} receive from server: {1}".format(get_time(), msg))
@@ -69,6 +73,8 @@ async def connect_and_move():
         move.speed(old)
       elif action == 'stop':
         move.stop()
+        if cur_thread is not None and cur_thread.isAlive():
+          auto.off = True
       elif action in ('slow', 'medium', 'fast'):
         move.speed(action)
       elif action == 'distance':
@@ -76,7 +82,13 @@ async def connect_and_move():
         print("send to server:", msg)
         await websocket.send(json.dumps(msg))
       elif action == 'auto':
-        pass
-        # auto.go()
-      
+        try:
+          if not cur_thread or not cur_thread.isAlive():
+            print(f"{get_time()} creat new thread to run auto.go()")
+            auto.off = False
+            cur_thread = Thread(target=auto.go)
+            cur_thread.start()
+        except:
+          print('thread have some error!')
+              
 asyncio.get_event_loop().run_until_complete(connect_and_move())

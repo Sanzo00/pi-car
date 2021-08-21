@@ -28,7 +28,10 @@ class Move:
     self.pwm_left.start(40)
     self.pwm_right.start(40)
     self.stop()
-    # print("init is done!")
+    print(f"{self.get_time()} init is done")
+
+  def get_time(self):
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
   def __del__(self):
     self.pwm_left.stop()
@@ -50,7 +53,7 @@ class Move:
       self.pwm_right.ChangeDutyCycle(100)
 
   def right(self):
-    # print("right")
+    print(f"{self.get_time()} right")
     GPIO.output(self.IN[0], GPIO.LOW)
     GPIO.output(self.IN[1], GPIO.HIGH)
     GPIO.output(self.ENA, GPIO.HIGH)
@@ -70,7 +73,7 @@ class Move:
     self.stop()
 
   def left(self):
-    # print("left")
+    print(f"{self.get_time()} left")
     GPIO.output(self.IN[0], GPIO.HIGH)
     GPIO.output(self.IN[1], GPIO.LOW)
     GPIO.output(self.ENA, GPIO.HIGH)
@@ -90,7 +93,7 @@ class Move:
     self.stop()
 
   def back(self):
-    # print("back")
+    print(f"{self.get_time()} back")
     GPIO.output(self.IN[0], GPIO.HIGH)
     GPIO.output(self.IN[1], GPIO.LOW)
     GPIO.output(self.ENA, GPIO.HIGH)
@@ -100,7 +103,7 @@ class Move:
     GPIO.output(self.ENB, GPIO.HIGH)
 
   def forward(self):
-    # print("forward")
+    print(f"{self.get_time()} forward")
     GPIO.output(self.IN[0], GPIO.LOW)
     GPIO.output(self.IN[1], GPIO.HIGH)
     GPIO.output(self.ENA, GPIO.HIGH)
@@ -110,7 +113,7 @@ class Move:
     GPIO.output(self.ENB, GPIO.HIGH)
 
   def stop(self):
-    # print("stop")
+    print(f"{self.get_time()} stop")
     GPIO.output(self.IN[0], GPIO.LOW)
     GPIO.output(self.IN[1], GPIO.LOW)
     GPIO.output(self.ENA, GPIO.HIGH)
